@@ -3,7 +3,6 @@ import { mount } from '@vue/test-utils';
 import SupportPage from '@/views/SupportPage.vue';
 import { createRouter, createMemoryHistory } from 'vue-router';
 import flushPromises from 'flush-promises';
-import api from '@/components/refreshToken.js';
 
 vi.mock('vue-cookies', () => ({
   default: {
