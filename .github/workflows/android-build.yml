@@ -1,0 +1,38 @@
+name: Android Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install dependencies
+        working-directory: ./Forraskod/Mobil/PointToPoint.Mobil
+        run: npm install --legacy-peer-deps
+
+      - name: Build Android APK
+        working-directory: ./Forraskod/Mobil/PointToPoint.Mobil
+        run: |
+          npm run build
+          npx cap sync android
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release.apk
+          path: android/app/build/outputs/apk/release/app-release.apk

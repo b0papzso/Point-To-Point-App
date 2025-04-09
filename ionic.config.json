@@ -1,0 +1,8 @@
+{
+  "name": "PointToPoint",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite",
+  "id": "dfcef515"
+}
