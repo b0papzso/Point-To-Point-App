@@ -6,8 +6,8 @@
           <ion-icon :icon="chevronBack" ></ion-icon>
         </ion-fab-button>    
     </ion-fab>
-    <h2 class="d-flex justify-content-center text-light">Egyenleg</h2>
-    <div class="container text-light">
+    <h2 class="d-flex justify-content-center">Egyenleg</h2>
+    <div class="container">
       <h3 class="mb-4">Egyenleg: {{ currentBalance }}$</h3>
       <button @click="topUpVisible = !topUpVisible" class="btn btn-success">{{ !topUpVisible ? "Egyenleg feltöltése" : "Bezárás"}}</button>
       <div class="topUpDiv" v-if="topUpVisible">

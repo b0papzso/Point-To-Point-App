@@ -2,12 +2,12 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title class="ion-text-start text-2xl font-bold px-4 py-3 text-light">Szia {{ userName }}!</ion-title>
+        <ion-title class="ion-text-start text-2xl font-bold px-4 py-3">Szia {{ userName }}!</ion-title>
       </ion-toolbar>
     </ion-header>
     
     <ion-content class="ion-padding">
-      <div class="section-title text-xl font-bold mb-4 mt-2 text-light">Lehetőségeid</div>
+      <div class="section-title text-xl font-bold mb-4 mt-2">Lehetőségeid:</div>
       <ion-grid>
         <ion-row>
           <ion-col size="6">
@@ -168,6 +168,6 @@ onMounted(() => {
   --padding-bottom: 16px;
 }
 ion-title{
-  background-color: #8e44ad;
+  background-color: #f0f2f5;
 }
 </style>

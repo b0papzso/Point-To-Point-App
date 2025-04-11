@@ -6,7 +6,7 @@
           <ion-icon :icon="chevronBack" ></ion-icon>
         </ion-fab-button>    
     </ion-fab>
-    <h2 class="d-flex justify-content-center text-light">Adataim</h2>
+    <h2 class="d-flex justify-content-center">Adataim</h2>
       <div class="profile-picture-container ion-text-center">
         <ion-avatar class="profile-avatar">
           <img alt="Profile Picture" id="pfp"/>

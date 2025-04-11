@@ -1,127 +1,262 @@
 <template>
-<ion-page>
-    
+  <ion-page>
     <ion-content :fullscreen="true">
+      <!-- Back button -->
       <ion-fab slot="fixed" vertical="top" horizontal="start" :edge="true">
-        <ion-fab-button @click="goBack()">
-          <ion-icon :icon="chevronBack" ></ion-icon>
+        <ion-fab-button @click="goBack()" class="mt-1">
+          <ion-icon :icon="chevronBack"></ion-icon>
         </ion-fab-button>    
-    </ion-fab>
-    <h2 class="d-flex justify-content-center text-light">Saját útjaim</h2>
-    <div v-for="ride in userRides" :key="ride.id" class="d-flex flex-wrap container justify-content-around mt-5">
-    <div class="card mt-3">
-      <div class="card-body">
-        <button class="btn btn-outline-danger d-flex float-end" @click="showDeleteConfirm = true">X</button>
-        <div v-if="showDeleteConfirm" class="modal fade show d-flex align-items-center" tabindex="-1" id="deleteModal">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Út törlése: {{ ride.startName }} - {{ ride.endName }}</h5>
-              <button type="button" class="btn-close" @click="showDeleteConfirm = false" aria-label="Close"></button>
+      </ion-fab>
+      
+      <!-- Page title -->
+      <h2 class="text-center my-3">Saját útjaim</h2>
+      
+      <!-- Routes list -->
+      <div class="container py-4">
+        <div class="row g-4">
+          <div v-for="ride in userRides" :key="ride.id" class="col-12 col-lg-6">
+            <div class="card route-card h-100 shadow-sm">
+              <div class="card-header bg-gradient d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                  <ion-icon :icon="navigateOutline" class="me-2"></ion-icon>
+                  {{ ride.startName }} - {{ ride.endName }}
+                </h5>
+                <div class="d-flex gap-2 align-items-center">
+                  <span class="badge" :class="ride.isRegular ? 'bg-success' : 'bg-warning'">
+                    {{ ride.isRegular ? "Ismétlődő" : "Egyszeri" }}
+                  </span>
+                  <button class="btn-close btn-close-danger" @click="showDeleteConfirm = true" aria-label="Delete"></button>
+                </div>
+              </div>
+              
+              <div class="card-body">
+                <!-- Delete confirmation modal -->
+                <div v-if="showDeleteConfirm" class="modal fade show d-block" tabindex="-1" id="deleteModal">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">Út törlése: {{ ride.startName }} - {{ ride.endName }}</h5>
+                        <button type="button" class="btn-close btn-close-white" @click="showDeleteConfirm = false" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body" id="deleteModalBody">
+                        <div class="alert alert-warning">
+                          <ion-icon :icon="warningOutline" class="me-2 fs-4"></ion-icon>
+                          <p>Biztosan törölni szeretnéd az útvonalat a listából? Ez a művelet nem visszavonható!</p>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="showDeleteConfirm = false">
+                          <ion-icon :icon="closeOutline" class="me-1"></ion-icon>
+                          Mégsem
+                        </button>
+                        <button type="button" class="btn btn-danger" @click="deleteRide(ride.tripId)">
+                          <ion-icon :icon="trashOutline" class="me-1"></ion-icon>
+                          Törlés
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="route-info mb-3">
+                  <p class="d-flex align-items-center mb-2">
+                    <ion-icon :icon="calendarOutline" class="me-2 text-primary"></ion-icon>
+                    <span class="fw-bold me-2">Időpont:</span> {{ ride.date }}
+                  </p>
+                  <p class="d-flex align-items-center mb-2">
+                    <ion-icon :icon="timeOutline" class="me-2 text-primary"></ion-icon>
+                    <span class="fw-bold me-2">Indulás-érkezés:</span> {{ ride.start }} - {{ ride.end }}
+                  </p>
+                  <div class="d-flex align-items-center mb-2">
+                    <ion-icon :icon="personOutline" class="me-2 text-primary"></ion-icon>
+                    <span class="fw-bold me-2">Sofőr:</span>
+                    <button class="driver-btn text-primary" @click="showDriverInfo(ride.driverId)">
+                      {{ ride.driverName }}
+                      <ion-icon :icon="informationCircleOutline" class="ms-1"></ion-icon>
+                    </button>
+                  </div>
+                  <p class="d-flex align-items-center mb-0">
+                    <ion-icon :icon="checkmarkCircleOutline" class="me-2" :class="ride.status ? 'text-success' : 'text-warning'"></ion-icon>
+                    <span class="fw-bold me-2">Állapot:</span>
+                    <span :class="ride.status ? 'text-success' : 'text-warning'">
+                      {{ ride.status ? "Elfogadva" : "Még nincs elfogadva" }}
+                    </span>
+                  </p>
+                </div>
+                
+                <div class="route-actions d-flex flex-wrap gap-2 mb-3">
+                  <button class="btn btn-outline-primary" @click="showStops(ride.id)">
+                    <ion-icon :icon="visibleStops[ride.id] ? 'chevron-up' : 'chevron-down'" class="me-1"></ion-icon>
+                    {{ visibleStops[ride.id] ? "Elrejtés" : "Megállók" }}
+                  </button>
+                  <button 
+                    class="btn btn-success ms-auto" 
+                    @click="lathato(ride.id)" 
+                    :disabled="!ride.status">
+                    <ion-icon :icon="starOutline" class="me-1"></ion-icon>
+                    {{ visibleRating[ride.id] ? "Bezárás" : "Sofőr értékelése" }}
+                  </button>
+                </div>
+                
+                <!-- Stops section -->
+                <div v-if="visibleStops[ride.id]" class="stops-container mt-3 p-3 bg-light rounded">
+                  <h6 class="d-flex align-items-center mb-3">
+                    <ion-icon :icon="pinOutline" class="me-2 text-primary"></ion-icon>
+                    Útvonal megállói
+                  </h6>
+                  
+                  <div v-if="rideStops[ride.id] && rideStops[ride.id].length" class="stops-list">
+                    <div v-for="stop in rideStops[ride.id]" :key="stop.id" class="stop-item d-flex align-items-center mb-2">
+                      <span
+                        class="stop-marker me-2"
+                        :style="{ backgroundColor: stop.markerColor }"
+                      ></span>
+                      <span :class="{'stop-accepted': stop.isAccepted, 'stop-suggested': !stop.isAccepted}">
+                        {{ stop.stopName }}
+                        <span v-if="!stop.isAccepted" class="badge bg-info ms-2">Javasolt</span>
+                      </span>
+                    </div>
+                  </div>
+                  <p v-else class="text-muted fst-italic">Nincsenek megállók.</p>
+                  
+                  <div class="stops-actions mt-3">
+                    <button class="btn btn-info" @click="handleShowAddStops(ride.id)">
+                      <ion-icon :icon="mapOutline" class="me-1"></ion-icon>
+                      Megállók megtekintése
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Rating section -->
+                <div v-if="visibleRating[ride.id]" class="rating-container mt-3 p-3 bg-light rounded">
+                  <h6 class="d-flex align-items-center mb-3">
+                    <ion-icon :icon="starOutline" class="me-2 text-warning"></ion-icon>
+                    Sofőr értékelése
+                  </h6>
+                  
+                  <div class="rating-stars mb-3">
+                    <div class="d-flex align-items-center justify-content-center">
+                      <div class="star-container" v-for="n in 5" :key="n" @click="ertekelSzam(n)">
+                        <span :id="n" class="star-icon">★</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="rating-form">
+                    <div class="mb-3">
+                      <input 
+                        type="text" 
+                        class="form-control" 
+                        placeholder="Foglald össze a véleményed" 
+                        v-model="eCim"
+                      >
+                    </div>
+                    <div class="mb-3">
+                      <textarea 
+                        class="form-control" 
+                        rows="3" 
+                        placeholder="Ide írd az véleményed" 
+                        v-model="eSzoveg"
+                      ></textarea>
+                    </div>
+                    <button class="btn btn-success w-100" @click="kuldes(ride.driverIndex)">
+                      <ion-icon :icon="sendOutline" class="me-1"></ion-icon>
+                      Értékelés küldése
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="modal-body" id="deleteModalBody">
-              <p>Biztosan törölni szeretnéd az útvonalat a listából? Ez a művelet nem visszavonható!</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Map modal -->
+      <div v-if="showAddStops" class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+              <h5 class="modal-title">Megállók megtekintése</h5>
+              <button type="button" class="btn-close btn-close-white" @click="showAddStops = !showAddStops" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+              <div class="modal-window"><MapView /></div> 
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" @click="showDeleteConfirm = false">Mégsem</button>
-              <button type="button" class="btn btn-danger" @click="deleteRide(ride.tripId)">Törlés</button>
+              <button class="btn btn-primary" @click="showAddStops = !showAddStops">
+                <ion-icon :icon="checkmarkOutline" class="me-1"></ion-icon>
+                Kész
+              </button>
             </div>
           </div>
         </div>
       </div>
-        <h5 class="card-title">Útvonal: {{ ride.startName }} - {{ ride.endName }}</h5>
-        <p class="card-text">Időpont:{{ ride.date }}, {{ ride.start }} - {{ ride.end }}</p>
-        <p class="card-text">Ismétlődő: {{ ride.isRegular ? "Igen" : "Nem" }}</p>
-        <p class="card-text">Sofőr:<p id="drivertext" @click="showDriverInfo(ride.driverId)">{{ ride.driverName }}</p></p>
-        <p class="card-text">Állapot: {{ ride.status ? "Elfogadva" : "Még nincs elfogadva" }}</p>
-        <button class="btn btn-warning mb-2" @click="showStops(ride.id)" id="soforGomb">
-            {{ visibleStops[ride.id] ? "Elrejtés" : "Megállók megtekintése" }}
-          </button>
-          <div v-if="visibleStops[ride.id]">
-              <p class="card-text">Útvonal megállói:</p>
-              <ul v-if="rideStops[ride.id] && rideStops[ride.id].length">
-                <li v-for="stop in rideStops[ride.id]" :key="stop.id">
-                  <span
-                    :style="{ 
-                      display: 'inline-block', 
-                      width: '12px', 
-                      height: '12px', 
-                      backgroundColor: stop.markerColor, 
-                      borderRadius: '50%', 
-                      marginRight: '8px' 
-                    }"
-                  ></span>
-                  {{ stop.isAccepted ? stop.stopName : stop.stopName + " (Javasolt)" }}
-                </li>
-              </ul>
-              <p v-else class="text-muted">Nincsenek megállók.</p>
-              <button class="btn btn-info mb-2" @click="handleShowAddStops(ride.id)">Megállók megtekintése</button>
+      
+      <!-- Driver modal -->
+      <div v-if="showSelectedDriver" class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+              <h5 class="modal-title">Sofőr adatai</h5>
+              <button type="button" class="btn-close btn-close-white" @click="closeDriverModal" aria-label="Close"></button>
             </div>
-            <div v-if="showAddStops" class="modal fade show d-block" tabindex="-1">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <div class="modal-header">
-                <button type="button" class="btn-close" @click="showAddStops = !showAddStops" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div class="modal-window"><MapView /></div> 
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-success" @click="showAddStops = !showAddStops">
-              Kész
-            </button>
-          </div>
-      </div>
-    </div>
-  </div>
-        <button class="btn btn-success mb-2" @click="lathato(ride.id)" id="soforGomb" :disabled="!ride.status">
-          {{visibleRating[ride.id] ? "Bezárás" : "Sofőr értékelése"}}
-        </button>
-        <div v-if="visibleRating[ride.id]">
-            <div class="d-flex flex-row">
-            <div class="csillag" v-for="n in 5" :key="n" @click="ertekelSzam(n)">
-              <p :id="n">★</p>
-            </div>
-          </div>
-          <input type="text" placeholder="Foglald össze a véleményed" v-model="eCim">
-          <textarea type="text" placeholder="Ide írd az véleményed" v-model="eSzoveg"/><br>
-          <button id="ertekelesGomb" class="btn btn-success mt-2 d-flex" @click="kuldes(ride.driverIndex)">
-            Küldés
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div v-if="showSelectedDriver" class="modal fade show d-block mt-5" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Sofőr adatai</h5>
-            <button type="button" class="btn-close" @click="closeDriverModal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div class="driver-profile text-center">
-              <div class="profile-avatar mb-3">
-                <img :src="`https://api.pointtopoint.hu/api/Driver/profile-picture/${selectedDriver.id}`" alt="Profile Picture">
-              </div>
-              <h4 class="mb-3">{{ selectedDriver?.firstName }} {{ selectedDriver?.lastName }}</h4>
-              <div class="driver-info">
-                <p><strong>Email:</strong> {{ selectedDriver?.email }}</p>
-                <p><strong>Férőhely:</strong> {{ selectedDriver?.carCapacity }}</p>
-                <p><strong>Értékelés:</strong> {{ selectedDriver?.rating || 'Nincs értékelés' }}</p>
+            <div class="modal-body">
+              <div class="driver-profile text-center">
+                <div class="profile-avatar mb-3">
+                  <img :src="`https://api.pointtopoint.hu/api/Driver/profile-picture/${selectedDriver.id}`" alt="Profile Picture" class="rounded-circle shadow">
+                </div>
+                <h4 class="mb-3 fw-bold">{{ selectedDriver?.firstName }} {{ selectedDriver?.lastName }}</h4>
+                <div class="driver-info">
+                  <div class="info-item mb-2 p-2">
+                    <strong>Email:</strong> {{ selectedDriver?.email }}
+                  </div>
+                  <div class="info-item mb-2 p-2">
+                    <strong>Férőhely:</strong> {{ selectedDriver?.carCapacity }}
+                    <ion-icon :icon="peopleOutline" class="ms-1"></ion-icon>
+                  </div>
+                  <div class="info-item p-2" :class="selectedDriver?.rating >= 4 ? 'bg-success text-white' : selectedDriver?.rating >= 3 ? 'bg-warning' : 'bg-danger text-white'">
+                    <strong>Értékelés:</strong> 
+                    <span class="ms-1">{{ selectedDriver?.rating || 'Nincs értékelés' }}</span>
+                    <div class="rating-stars">
+                      <ion-icon 
+                        v-for="i in 5" 
+                        :key="i"
+                        :icon="i <= Math.round(selectedDriver?.rating || 0) ? 'star' : 'star-outline'"
+                        class="ms-1">
+                      </ion-icon>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-   </ion-content>
+    </ion-content>
   </ion-page>
 </template>
 
 <script setup>
 import { IonIcon, IonPage, IonContent, IonFab, IonFabButton } from '@ionic/vue';
-import { chevronBack } from 'ionicons/icons';
+import { 
+  chevronBack,
+  navigateOutline,
+  calendarOutline,
+  timeOutline,
+  personOutline,
+  checkmarkCircleOutline,
+  pinOutline,
+  informationCircleOutline,
+  peopleOutline,
+  starOutline,
+  star,
+  closeOutline,
+  trashOutline,
+  warningOutline,
+  mapOutline,
+  sendOutline,
+  checkmarkOutline
+} from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import api from '@/components/refreshToken.js'
 import { Marker } from 'maplibre-gl';
@@ -131,6 +266,8 @@ import { onMounted, ref, shallowRef } from 'vue';
 import "maplibre-gl/dist/maplibre-gl.css";
 import MapView from './MapView.vue';
 import { useMapStore } from "@/stores/mapStore";
+
+// Keep the original script content
 const map = shallowRef(null);
 const userRoutes = ref([]);
 const toast = useToast();
@@ -152,6 +289,8 @@ const isVisible = ref("none")
 const colors = ['#00ff00', '#ff0000', '#ffa500', '#800080'];
 const selectedRoute = ref(null);
 const drivers = ref([])
+
+// Continue with the original methods
 const goBack = () => {
     router.push("/main");
 };
@@ -162,8 +301,9 @@ const handleShowAddStops = (routeId) => {
   selectedRideId.value = routeId
 };
 
-const closeModal = () => {
-  showAddStops.value = false;
+const closeDriverModal = () => {
+  showSelectedDriver.value = false;
+  selectedDriver.value = null;
 };
 
 const showDriverInfo = async (driverId) => {
@@ -184,7 +324,7 @@ const deleteRide = async(rideId) =>{
     const response = await api.delete(`Trip/${rideId}`);
     toast.success("Útsikeresen törölve!");
     getUserRides();
-    showDeleteConfirm = false
+    showDeleteConfirm.value = false;
   }
   catch (error) {
     toast.error("Hiba történt a törlés során!");
@@ -216,8 +356,6 @@ const loadCurrentMap = async (routeId) => {
           .addTo(mapStore.map);
 
         stop.markerColor = color;
-
-        console.log(stop.long, stop.lat, color);
       }
     };
   } catch (error) {
@@ -233,7 +371,6 @@ const showStops = async (id) => {
       try {
         const response = await api.get(`StoppingPoint/getByRouteId?routeId=${id}`);
         rideStops.value[id] = response.data;
-        console.log(rideStops.value[id].length)
       } catch (error) {
         console.error("Error fetching stopping points:", error);
       }
@@ -292,17 +429,17 @@ onMounted(async () => {
 const ertekelSzam = (szam) => {
     ertekelesSzam.value = szam;
     for (let index = 0; index < szam; index++) {
-  const star = document.getElementById(index + 1);
-        if (star) {
-            star.style.color = "gold";
-            star.style.fontSize = "1rem";
-        }
-    }
-for (let index = szam; index < 5; index++) {
         const star = document.getElementById(index + 1);
         if (star) {
-            star.style.color = "black";
-            star.style.fontSize = "1rem";
+            star.style.color = "gold";
+            star.style.fontSize = "1.5rem";
+        }
+    }
+    for (let index = szam; index < 5; index++) {
+        const star = document.getElementById(index + 1);
+        if (star) {
+            star.style.color = "#6c757d";
+            star.style.fontSize = "1.5rem";
         }
     }
 };
@@ -311,71 +448,175 @@ const lathato = (id) => {
     ertekelSzam.value = 0;
     eCim.value = "";
     eSzoveg.value = "";
-  if (visibleRating.value[id]) {
-    visibleRating.value = {};
-  } else {
-    visibleRating.value = {};
-    visibleRating.value[id] = true;
-  }
+    if (visibleRating.value[id]) {
+        visibleRating.value = {};
+    } else {
+        visibleRating.value = {};
+        visibleRating.value[id] = true;
+    }
 };
+
 const kuldes = async(soforSzam) =>{
     try{
+        if (!ertekelesSzam.value) {
+            toast.error("Kérjük, adj értékelést a sofőrnek!");
+            return;
+        }
         
         const data = ref({
             reviewingUserId: VueCookies.get("passengerID"),
             reviewedUserId: userRides.value[soforSzam].driverId,
-            rating: ertekelesSzam,
-            title: eCim,
-            reviewMessage: eSzoveg
+            rating: ertekelesSzam.value,
+            title: eCim.value,
+            reviewMessage: eSzoveg.value
         })
         const response = await api.post(`review`, data.value)
         toast.success("Sikeres értékelés!")
-        getUserRides()
+        visibleRating.value = {};
+        getUserRides();
     }
     catch(error){
-        console.log(error)
+        console.log(error);
+        toast.error("Hiba történt az értékelés küldése során!");
     }
 }
 </script>
 
 <style scoped>
-ion-fab-button{
-    margin-top: 1rem;
+ion-content {
+  --background: #f0f2f5;
 }
 
-#ertekeles, #ertekelesGomb, #csillagok, #ertekelesCim{
-    display: none;
-    margin-top: 5px;
-    width: fit-content;
+h2 {
+  font-weight: 700;
+  margin-top: 2rem;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
 }
-#ertekeles{
-    height: 50px;
+
+.route-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: none;
 }
-.csillag{
-    height: 3vh;
-    width: 10vw
+
+.route-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
 }
-.card-body{
-  width: 90vw;
+
+.card-header {
+  background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+  color: white;
+  padding: 15px;
+  border-bottom: none;
 }
-.modal-window{
-  height: 70vh;
+
+.btn-close-danger {
+  filter: invert(25%) sepia(100%) saturate(2000%) hue-rotate(345deg) brightness(80%);
 }
-.modal-body{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 75vh;
-}
-#deleteModal{
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-#deleteModalBody{
-  height: 15vh;
-}
-#drivertext{
-  color: blue;
+
+.driver-btn {
+  background: none;
+  border: none;
+  padding: 0;
   text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.2s;
 }
+
+.driver-btn:hover {
+  color: #0056b3;
+}
+
+.stop-marker {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
+}
+
+.stops-container, .rating-container {
+  border-radius: 8px;
+  border-left: 4px solid #4e73df;
+}
+
+.stop-suggested {
+  font-style: italic;
+}
+
+.stop-accepted {
+  font-weight: 500;
+}
+
+.star-container {
+  cursor: pointer;
+  padding: 0 5px;
+}
+
+.star-icon {
+  font-size: 1.5rem;
+  color: #6c757d;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.star-container:hover .star-icon {
+  transform: scale(1.2);
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+  position: relative;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.driver-info {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.info-item {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.rating-stars {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  font-size: 1.2rem;
+  color: #ffc107;
+}
+
+.modal {
+  background-color: rgba(0,0,0,0.5);
+  backdrop-filter: blur(5px);
+}
+
+.modal-window {
+  height: 60vh;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
 </style>

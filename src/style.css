@@ -14,10 +14,10 @@ code {
 }
 
 :root {
-  --ion-background-color: linear-gradient(180deg,#8e44ad 50%, #6621a7 50%);
+  --ion-background-color: #f0f2f5;
 }
   
 ion-content {
-  --background: linear-gradient(180deg, #8e44ad 0%, #9418db 50%);
+  --background: #f0f2f5;
 }
 

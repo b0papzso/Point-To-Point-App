@@ -5,7 +5,7 @@
         <ion-icon :icon="chevronBack" ></ion-icon>
       </ion-fab-button>
   </ion-fab>
-  <h2 class="d-flex justify-content-center text-light">Ügyfélszolgálat</h2>
+  <h2 class="d-flex justify-content-center">Ügyfélszolgálat</h2>
     <ion-content class="ion-padding">
       <div class="container">
         <h2 class="mb-4">Írja meg, mi a panasza</h2>

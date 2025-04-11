@@ -42,7 +42,7 @@
           </ion-card-content>
         </ion-card>
         <div class="signup-link ion-text-center">
-          <p class="text-light">
+          <p>
            Nincs fiókod?
            <a href="/register" id="register" class="text-info">Regisztrálj</a>
           </p>
