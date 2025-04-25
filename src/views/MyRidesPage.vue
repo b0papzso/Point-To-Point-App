@@ -32,7 +32,7 @@
                     <span class="badge bg-success me-1">{{ ride.repetitions[n - 1] ? days[n - 1] : "" }}</span>
                   </div>
                 </div>
-                <div v-if="showDeleteConfirm" class="modal fade show d-block" tabindex="-1" id="deleteModal">
+                <div v-if="showDeleteConfirm" class="modal fade show d-flex align-items-center" tabindex="-1" id="deleteModal">
                   <div class="modal-dialog">
                     <div class="modal-content">
                       <div class="modal-header bg-danger text-white">
