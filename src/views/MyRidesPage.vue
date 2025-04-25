@@ -1,23 +1,20 @@
 <template>
   <ion-page>
     <ion-content :fullscreen="true">
-      <!-- Back button -->
       <ion-fab slot="fixed" vertical="top" horizontal="start" :edge="true">
         <ion-fab-button @click="goBack()" class="mt-1">
           <ion-icon :icon="chevronBack"></ion-icon>
         </ion-fab-button>    
       </ion-fab>
       
-      <!-- Page title -->
       <h2 class="text-center my-3">Saját útjaim</h2>
       
-      <!-- Routes list -->
       <div class="container py-4">
         <div class="row g-4">
           <div v-for="ride in userRides" :key="ride.id" class="col-12 col-lg-6">
             <div class="card route-card h-100 shadow-sm">
               <div class="card-header bg-gradient d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">
+                <h5 class="card-title mb-0 text-dark">
                   <ion-icon :icon="navigateOutline" class="me-2"></ion-icon>
                   {{ ride.startName }} - {{ ride.endName }}
                 </h5>
@@ -30,7 +27,11 @@
               </div>
               
               <div class="card-body">
-                <!-- Delete confirmation modal -->
+                <div v-if="ride.isRegular" class="d-flex flex-row align-items-center mb-1">
+                  <div v-for="n in 7" :key="n" >
+                    <span class="badge bg-success me-1">{{ ride.repetitions[n - 1] ? days[n - 1] : "" }}</span>
+                  </div>
+                </div>
                 <div v-if="showDeleteConfirm" class="modal fade show d-block" tabindex="-1" id="deleteModal">
                   <div class="modal-dialog">
                     <div class="modal-content">
@@ -59,9 +60,9 @@
                 </div>
                 
                 <div class="route-info mb-3">
-                  <p class="d-flex align-items-center mb-2">
-                    <ion-icon :icon="calendarOutline" class="me-2 text-primary"></ion-icon>
-                    <span class="fw-bold me-2">Időpont:</span> {{ ride.date }}
+                  <p class="d-flex align-items-center mb-2" >
+                    <ion-icon :icon="calendarOutline" class="me-2 text-primary" :style="ride.isRegular ? 'display: none' : 'display : block'"></ion-icon>
+                    <span class="fw-bold me-2" :style="ride.isRegular ? 'display: none' : 'display : block'">Időpont: {{ ride.date }}</span> 
                   </p>
                   <p class="d-flex align-items-center mb-2">
                     <ion-icon :icon="timeOutline" class="me-2 text-primary"></ion-icon>
@@ -98,7 +99,6 @@
                   </button>
                 </div>
                 
-                <!-- Stops section -->
                 <div v-if="visibleStops[ride.id]" class="stops-container mt-3 p-3 bg-light rounded">
                   <h6 class="d-flex align-items-center mb-3">
                     <ion-icon :icon="pinOutline" class="me-2 text-primary"></ion-icon>
@@ -127,7 +127,6 @@
                   </div>
                 </div>
                 
-                <!-- Rating section -->
                 <div v-if="visibleRating[ride.id]" class="rating-container mt-3 p-3 bg-light rounded">
                   <h6 class="d-flex align-items-center mb-3">
                     <ion-icon :icon="starOutline" class="me-2 text-warning"></ion-icon>
@@ -171,7 +170,6 @@
         </div>
       </div>
       
-      <!-- Map modal -->
       <div v-if="showAddStops" class="modal fade show d-block" tabindex="-1">
         <div class="modal-dialog modal-lg">
           <div class="modal-content">
@@ -192,7 +190,6 @@
         </div>
       </div>
       
-      <!-- Driver modal -->
       <div v-if="showSelectedDriver" class="modal fade show d-block" tabindex="-1">
         <div class="modal-dialog">
           <div class="modal-content">
@@ -267,7 +264,6 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import MapView from './MapView.vue';
 import { useMapStore } from "@/stores/mapStore";
 
-// Keep the original script content
 const map = shallowRef(null);
 const userRoutes = ref([]);
 const toast = useToast();
@@ -282,6 +278,7 @@ const visibleStops = ref({})
 const visibleRating = ref({})
 var showAddStops = ref(false)
 const rideStops = ref([])
+const days = ref(['H' , 'K', 'Sz', 'Cs', 'P', 'Sz', 'V'])
 const mapStore = useMapStore();
 const selectedRideId = ref(null);
 const selectedDriver = ref(null);
@@ -290,7 +287,6 @@ const colors = ['#00ff00', '#ff0000', '#ffa500', '#800080'];
 const selectedRoute = ref(null);
 const drivers = ref([])
 
-// Continue with the original methods
 const goBack = () => {
     router.push("/main");
 };

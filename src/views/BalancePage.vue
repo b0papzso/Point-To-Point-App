@@ -86,4 +86,9 @@ ion-fab-button {
 input{
     width: 50%;
 }
+h2 {
+  font-weight: 700;
+  margin-top: 2rem;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
 </style>

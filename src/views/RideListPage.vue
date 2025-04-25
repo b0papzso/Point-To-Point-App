@@ -10,13 +10,34 @@
       <h2 class="text-center my-3">Összes útvonal</h2>
       
       <div class="search-container mx-auto px-4 py-3 bg-light rounded shadow-sm">
-        <div class="row g-3">
+        <div class="row mb-3">
+          <div class="col-12">
+            <div class="btn-group w-100">
+              <button 
+                class="btn" 
+                :class="searchMethod === 'text' ? 'btn-primary' : 'btn-outline-primary'"
+                @click="searchMethod = 'text'">
+                <ion-icon :icon="textOutline" class="me-1"></ion-icon>
+                Szöveges keresés
+              </button>
+              <button 
+                class="btn" 
+                :class="searchMethod === 'map' ? 'btn-primary' : 'btn-outline-primary'"
+                @click="searchMethod = 'map', getUserLocation(true)">
+                <ion-icon :icon="mapOutline" class="me-1"></ion-icon>
+                Térképes keresés
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="searchMethod === 'text'" class="row g-3">
           <div class="col-12 col-md-6">
             <div class="input-group">
               <span class="input-group-text bg-primary text-white">
                 <ion-icon :icon="locationOutline"></ion-icon>
               </span>
-              <input type="text" placeholder="Honnan szeretnél indulni?" v-on:change="searchStart()" v-model="start" class="form-control">
+              <input type="text" placeholder="Honnan szeretnél indulni?" v-on:change="searchRoutes()" v-model="start" class="form-control">
             </div>
           </div>
           <div class="col-12 col-md-6">
@@ -24,10 +45,97 @@
               <span class="input-group-text bg-primary text-white">
                 <ion-icon :icon="flagOutline"></ion-icon>
               </span>
-              <input type="text" placeholder="Hova szeretnél menni?" v-on:change="searchEnd()" v-model="end" class="form-control">
+              <input type="text" placeholder="Hova szeretnél menni?" v-on:change="searchRoutes()" v-model="end" class="form-control">
             </div>
           </div>
         </div>
+
+        <div v-if="searchMethod === 'location'" class="row g-3">
+          <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <p class="mb-1">
+                  <span class="badge bg-primary me-2">Jelenlegi helyzet</span>
+                  <span v-if="userLocation">{{ userLocation }}</span>
+                  <span v-else class="text-muted">Helyzet meghatározása...</span>
+                </p>
+              </div>
+              <button 
+                class="btn btn-outline-primary" 
+              >
+                <ion-icon :icon="refreshOutline" class="me-1"></ion-icon>
+                Frissítés
+              </button>
+            </div>
+            <div class="input-group">
+              <span class="input-group-text bg-primary text-white">
+                <ion-icon :icon="flagOutline"></ion-icon>
+              </span>
+              <input type="text" placeholder="Hova szeretnél menni?" v-model="end" class="form-control">
+            </div>
+            <div class="mt-3">
+              <button 
+                class="btn btn-primary w-100" 
+                @click="searchFromCurrentLocation()" 
+                :disabled="!userLocation || !end">
+                <ion-icon :icon="searchOutline" class="me-1"></ion-icon>
+                Keresés
+              </button>
+            </div>
+          </div>
+        </div> 
+
+        <div v-if="searchMethod === 'map'" class="row g-3">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <p class="mb-1">
+          <span class="badge bg-primary me-2">Jelenlegi helyzet</span>
+          <span v-if="userLocation">{{ userLocation.lat }}, {{ userLocation.lng }}</span>
+          <span v-else class="text-muted">Helyzet meghatározása...</span>
+        </p>
+      </div>
+      <button 
+        class="btn btn-outline-primary"
+        @click="getUserLocation(true)">
+        <ion-icon :icon="refreshOutline" class="me-1"></ion-icon>
+        Frissítés
+      </button>
+    </div>
+
+    <button 
+      class="btn btn-primary w-100" 
+      @click="openMapModal">
+      <ion-icon :icon="mapOutline" class="me-1"></ion-icon>
+      Térkép megnyitása
+    </button>
+
+    <div class="mt-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="map-coordinates">
+          <p class="mb-0" v-if="!VueCookies.get('lat') && !VueCookies.get('lng')">
+            <span class="badge bg-success me-2">Cél</span>
+            {{ VueCookies.get("lat") }} , {{ VueCookies.get("lng") }}
+          </p>
+          <p v-if="!VueCookies.get('lat') && !VueCookies.get('lng')" class="text-muted mb-0">
+            <ion-icon :icon="informationCircleOutline" class="me-1"></ion-icon>
+            Nyisd meg a térképet a célpont kiválasztásához
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-3" v-if="VueCookies.get('lat') && VueCookies.get('lng') && userLocation">
+      <button 
+        class="btn btn-primary w-100" 
+        @click="searchOptimalRoutes()" 
+        :disabled="!VueCookies.get('lat') ||  !VueCookies.get('lng') || !userLocation">
+        <ion-icon :icon="searchOutline" class="me-1"></ion-icon>
+        Optimális útvonalak keresése
+      </button>
+    </div>
+  </div>
+</div>
       </div>
       
       <div class="container py-4">
@@ -35,20 +143,26 @@
           <div v-for="ride in allRides" :key="ride.id" class="col-12 col-lg-6">
             <div class="card route-card h-100 shadow-sm">
               <div class="card-header bg-gradient d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">
+                <h5 class="card-title mb-0 text-dark">
                   <ion-icon :icon="navigateOutline" class="me-2"></ion-icon>
                   {{ ride.startName }} - {{ ride.endName }}
                 </h5>
-                <span class="badge" :class="ride.isRegular ? 'bg-success' : 'bg-warning'">
+                <span class="badge m-2" :class="ride.isRegular ? 'bg-success' : 'bg-warning'">
                   {{ ride.isRegular ? "Ismétlődő" : "Egyszeri" }}
                 </span>
+                
               </div>
               
               <div class="card-body">
+                <div v-if="ride.isRegular" class="d-flex flex-row align-items-center mb-1">
+                  <div v-for="n in 7" :key="n" >
+                    <span class="badge bg-success me-1">{{ ride.repetitions[n - 1] ? days[n - 1] : "" }}</span>
+                  </div>
+                </div>
                 <div class="route-info mb-3">
                   <p class="d-flex align-items-center mb-2">
-                    <ion-icon :icon="calendarOutline" class="me-2 text-primary"></ion-icon>
-                    <span class="fw-bold me-2">Időpont:</span> {{ ride.date }}
+                    <ion-icon :icon="calendarOutline" class="me-2 text-primary" :style="ride.isRegular ? 'display: none' : 'display : block'"></ion-icon>
+                    <span class="fw-bold me-2" :style="ride.isRegular ? 'display: none' : 'display : block'">Időpont: {{ ride.date }}</span> 
                   </p>
                   <p class="d-flex align-items-center mb-2">
                     <ion-icon :icon="timeOutline" class="me-2 text-primary"></ion-icon>
@@ -62,12 +176,18 @@
                       <ion-icon :icon="informationCircleOutline" class="ms-1"></ion-icon>
                     </button>
                   </div>
+                  
+                  <p v-if="ride.distance !== undefined" class="d-flex align-items-center mb-0 mt-2">
+                    <ion-icon :icon="speedometerOutline" class="me-2 text-primary"></ion-icon>
+                    <span class="fw-bold me-2">Távolság:</span> 
+                    {{ formatDistance(ride.distance) }} km
+                  </p>
                 </div>
                 
                 <div class="stop-actions d-flex flex-wrap gap-2">
                   <button class="btn btn-outline-primary" @click="showStops(ride.id)">
                     <ion-icon :icon="visibleStops[ride.id] ? 'chevronUp' : 'chevronDown'" class="me-1"></ion-icon>
-                    {{ visibleStops[ride.id] ? "Megállók elrejtése" : "Megállók megtekintése" }}
+                    {{ visibleStops[ride.id] ? "Elrejtés" : "Megállók" }}
                   </button>
                   <button 
                     class="btn btn-primary ms-auto" 
@@ -113,6 +233,7 @@
           </div>
         </div>
       </div>
+
       <div v-if="showAddStops" class="modal fade show d-flex align-items-center" tabindex="-1">
         <div class="modal-dialog modal-lg">
           <div class="modal-content">
@@ -138,6 +259,31 @@
           </div>
         </div>
       </div>
+      
+      <div v-if="showMapModal" class="modal fade show d-flex align-items-center" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Célpont kiválasztása</h5>
+        <button type="button" class="btn-close btn-close-white" @click="closeMapModal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="modal-window">
+          <MapView />
+        </div>
+      </div>
+      <div class="modal-footer d-flex justify-content-between">
+        <div>
+          <button class="btn btn-success" @click="confirmMapSelection" :disabled="!VueCookies.get('lat') && VueCookies.get('lng')">
+            <ion-icon :icon="checkmarkOutline" class="me-1"></ion-icon>
+            Kiválasztás
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
       <div v-if="showSelectedDriver" class="modal fade show d-block" tabindex="-1">
         <div class="modal-dialog">
           <div class="modal-content">
@@ -200,7 +346,16 @@ import {
   logInOutline,
   chevronDown,
   star,
-  starOutline
+  starOutline,
+  textOutline,
+  mapOutline,
+  closeOutline,
+  searchOutline,
+  speedometerOutline,
+  refreshOutline,
+  locateOutline,
+  trashOutline,
+  checkmarkOutline
 } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 import { Marker } from 'maplibre-gl';
@@ -210,6 +365,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import MapView from './MapView.vue';
 import {useToast} from 'vue-toastification'
 import { useMapStore } from "@/stores/mapStore";
+import { Geolocation } from '@capacitor/geolocation';
+
 const map = shallowRef(null);
 const router = useRouter()
 const allRides = ref([])
@@ -226,9 +383,19 @@ const toast = useToast()
 var end = ref()
 import api from '@/components/refreshToken.js'
 const selectedRoute = ref(null);
+const days = ref(['H' , 'K', 'Sz', 'Cs', 'P', 'Sz', 'V'])
+const searchMethod = ref('text')
+const endPoint = ref(null)
+const showMapModal = ref(false)
+const userLocation = ref(null)
+const isGettingLocation = ref(false)
+
 const goBack = () => {
   if (showAddStops.value) {
     closeModal();
+  }
+  if (showMapModal.value) {
+    closeMapModal();
   }
   router.push("/main");
   getAllRides();
@@ -237,6 +404,14 @@ const goBack = () => {
 
 const closeModal = () => {
   showAddStops.value = false;
+};
+
+const closeMapModal = () => {
+  showMapModal.value = false;
+};
+
+const openMapModal = () => {
+  showMapModal.value = true;
 };
 
 const showDriverInfo = async (driverId) => {
@@ -274,12 +449,14 @@ const addStop = async () => {
     console.log(error)
   }
 }
+
 const getAllRides = async () => {
     try {
         const response = await api.get(`Route`);
         const passengerTripsResponse = await api.get(`Trip/getTripByPassenger?passengerId=${VueCookies.get("passengerID")}`);
         if (Array.isArray(response.data)) {
             allRides.value = response.data
+            console.log(allRides.value)
         } else {
             allRides.value = [response.data.routeId];
         }
@@ -300,9 +477,12 @@ const getAllRides = async () => {
         console.error("Error fetching user rides:", error);
     }
 };
+
 onMounted(async () => {
     await getAllRides();
+    await getUserLocation();
 }),
+
 onUnmounted(() => {
     map.value?.remove();
 })
@@ -387,63 +567,226 @@ const signUp = async (utId) => {
   }
 }
 
-const searchStart = async () => {
+const searchRoutes = async () => {
   try {
-    if (start.value) {
-      allRides.value = []
-      const routeResponse = await api.get(`Route/getRouteByStart?start=${start.value}`)
-      const stopResponse = await api.get(`StoppingPoint/getByStopName?stop=${start.value}`)
-      routeResponse.data.forEach(async routeData => {
-        allRides.value.push(routeData)
-      })
-      stopResponse.data.forEach(async rId => {
-        if (!allRides.value.find(route => route.id === rId.routeId)) {
-          const routeStopResponse = await api.get(`Route/${rId.routeId}`)
-          allRides.value.push(routeStopResponse.data)
+    if (start.value && end.value) {
+      allRides.value = [];
+      
+      const startRouteResponse = await api.get(`Route/getRouteByStart?start=${start.value}`);
+      const startStopResponse = await api.get(`StoppingPoint/getByStopName?stop=${start.value}`);
+      
+
+      const endRouteResponse = await api.get(`Route/getRouteByEnd?end=${end.value}`);
+      const endStopResponse = await api.get(`StoppingPoint/getByStopName?stop=${end.value}`);
+      
+
+      const startRouteIds = new Set(startRouteResponse.data.map(route => route.id));
+      
+
+      startStopResponse.data.forEach(stop => {
+        startRouteIds.add(stop.routeId);
+      });
+      
+
+      const endRouteIds = new Set(endRouteResponse.data.map(route => route.id));
+      
+
+      endStopResponse.data.forEach(stop => {
+        endRouteIds.add(stop.routeId);
+      });
+      
+
+      const matchingRouteIds = [...startRouteIds].filter(id => endRouteIds.has(id));
+      
+      const routesMap = {};
+      
+      startRouteResponse.data.forEach(route => {
+        if (matchingRouteIds.includes(route.id)) {
+          routesMap[route.id] = route;
         }
       });
+      
+      endRouteResponse.data.forEach(route => {
+        if (matchingRouteIds.includes(route.id)) {
+          routesMap[route.id] = route;
+        }
+      });
+      
+      for (const routeId of matchingRouteIds) {
+        if (!routesMap[routeId]) {
+          const routeResponse = await api.get(`Route/${routeId}`);
+          routesMap[routeId] = routeResponse.data;
+        }
+      }
+      
+      allRides.value = Object.values(routesMap);
+      
+      const driverResponse = await api.get('driver');
+      const driverMap = {};
+      driverResponse.data.forEach(driver => {
+        driverMap[driver.id] = `${driver.firstName} ${driver.lastName}`;
+      });
+      
+      for (let i = 0; i < allRides.value.length; i++) {
+        const driverId = allRides.value[i].driverId;
+        allRides.value[i].driverName = driverMap[driverId] || 'Unknown Driver';
+      }
+    } 
 
+    else if (start.value) {
+      allRides.value = [];
+      const routeResponse = await api.get(`Route/getRouteByStart?start=${start.value}`);
+      const stopResponse = await api.get(`StoppingPoint/getByStopName?stop=${start.value}`);
+      
+      routeResponse.data.forEach(routeData => {
+        allRides.value.push(routeData);
+      });
+      
+
+      const routeIdSet = new Set(allRides.value.map(route => route.id));
+      for (const stop of stopResponse.data) {
+        if (!routeIdSet.has(stop.routeId)) {
+          const routeStopResponse = await api.get(`Route/${stop.routeId}`);
+          allRides.value.push(routeStopResponse.data);
+          routeIdSet.add(stop.routeId);
+        }
+      }
+      
       for (let index = 0; index < allRides.value.length; index++) {
         const driverResponse = await api.get(`driver/${allRides.value[index].driverId}`);
         allRides.value[index].driverName = `${driverResponse.data.firstName} ${driverResponse.data.lastName}`;
       }
-    } else {
-      getAllRides()
     }
-  } catch (error) {
-    console.log(error)
-  }
-}
 
-const searchEnd = async () => {
-  try {
-    if (end.value) {
-      allRides.value = []
-      const routeResponse = await api.get(`Route/getRouteByEnd?end=${end.value}`)
-      const stopResponse = await api.get(`StoppingPoint/getByStopName?stop=${end.value}`)
-      routeResponse.data.forEach(async routeData => {
-        allRides.value.push(routeData)
-      })
-      stopResponse.data.forEach(async rId => {
-        if (!allRides.value.find(route => route.id === rId.routeId)) {
-          const routeStopResponse = await api.get(`Route/${rId.routeId}`)
-          allRides.value.push(routeStopResponse.data)
-        }
+    else if (end.value) {
+      allRides.value = [];
+      const routeResponse = await api.get(`Route/getRouteByEnd?end=${end.value}`);
+      const stopResponse = await api.get(`StoppingPoint/getByStopName?stop=${end.value}`);
+      
+      routeResponse.data.forEach(routeData => {
+        allRides.value.push(routeData);
       });
-      const driverResponse = await api.get(`driver`);
-        driverResponse.data.forEach(driver => {
-          if (driver.id === allRides.value[index].driverId) {
-            allRides.value[index].driverName = `${driver.firstName} ${driver.lastName}`;
-          }
-        });
-        
-    } else {
-      getAllRides()
+      
+
+      const routeIdSet = new Set(allRides.value.map(route => route.id));
+      for (const stop of stopResponse.data) {
+        if (!routeIdSet.has(stop.routeId)) {
+          const routeStopResponse = await api.get(`Route/${stop.routeId}`);
+          allRides.value.push(routeStopResponse.data);
+          routeIdSet.add(stop.routeId);
+        }
+      }
+      
+
+      const driverResponse = await api.get('driver');
+      for (let index = 0; index < allRides.value.length; index++) {
+        const driver = driverResponse.data.find(driver => driver.id === allRides.value[index].driverId);
+        if (driver) {
+          allRides.value[index].driverName = `${driver.firstName} ${driver.lastName}`;
+        }
+      }
+    }
+
+    else {
+      getAllRides();
     }
   } catch (error) {
-    console.log(error)
+    console.log(error);
+    toast.error("Hiba történt a keresés során!");
   }
-}
+};
+
+const getUserLocation = async () => {
+  if (userLocation.value) {
+    return userLocation.value;
+  }
+
+  isGettingLocation.value = true;
+  try {
+    const position = await Geolocation.getCurrentPosition({
+      enableHighAccuracy: true,
+      timeout: 10000
+    });
+    
+    userLocation.value = {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude
+    };
+    
+    isGettingLocation.value = false;
+    return userLocation.value;
+  } catch (error) {
+    console.error('Error getting location:', error);
+    toast.error("Nem sikerült meghatározni a helyzetedet. Ellenőrizd a helymeghatározási jogosultságokat!");
+    isGettingLocation.value = false;
+    return null;
+  }
+};
+
+const formatDistance = (distance) => {
+  return parseFloat(distance).toFixed(2);
+};
+
+
+const confirmMapSelection = () => {
+  if (VueCookies.get("lat") && VueCookies.get("lng")) {
+    closeMapModal();
+    toast.success("Pont kiválasztva!");
+  } else {
+    toast.error("Válaszd ki a célpontot!");
+  }
+};
+
+const searchOptimalRoutes = async () => {
+  if (!userLocation.value || !VueCookies.get("lat") || !VueCookies.get("lng")) {
+    toast.error("Hiányzó helyadatok!");
+    return;
+  }
+  
+  await searchOptimalRoutesWithCoordinates(
+    userLocation.value.lat,
+    userLocation.value.lng,
+    VueCookies.get("lat"),
+    VueCookies.get("lng")
+  );
+};
+
+
+const searchOptimalRoutesWithCoordinates = async (lat1, lng1, lat2, lng2) => {
+  try {
+    
+    const response = await api.get(`Route/getOptimalRoutes`, {
+      params: {
+        startLat: lat1,
+        startLng: lng1,
+        endLat: lat2,
+        endLng: lng2
+      }
+    });
+    
+    if (!response.data || response.data.length === 0) {
+      toast.info("Nem találtunk optimális útvonalakat.");
+      return;
+    }
+    
+    allRides.value = response.data.map(item => ({
+      ...item.route,
+      distance: item.distance
+    }));
+    
+    for (let index = 0; index < allRides.value.length; index++) {
+      const driverResponse = await api.get(`driver/${allRides.value[index].driverId}`);
+      allRides.value[index].driverName = `${driverResponse.data.firstName} ${driverResponse.data.lastName}`;
+      
+      const passengerTripsResponse = await api.get(`Trip/getTripByPassenger?passengerId=${VueCookies.get("passengerID")}`);
+      allRides.value[index].hasJoined = passengerTripsResponse.data.some(trip => trip.routeId === allRides.value[index].id);
+    }
+    
+  } catch (error) {
+    console.error('Error searching optimal routes:', error);
+    toast.error("Hiba történt az optimális útvonalak keresése során!");
+  }
+};
 
 </script>
 
@@ -569,5 +912,9 @@ h2 {
   height: 60vh;
   border-radius: 8px;
   overflow: hidden;
+}
+
+.modal-content{
+  width: 96vw;
 }
 </style>

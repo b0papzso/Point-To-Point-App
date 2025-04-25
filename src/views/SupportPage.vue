@@ -5,7 +5,7 @@
         <ion-icon :icon="chevronBack" ></ion-icon>
       </ion-fab-button>
   </ion-fab>
-  <h2 class="d-flex justify-content-center">Ügyfélszolgálat</h2>
+  <h2 class="d-flex justify-content-center text-dark my-3">Ügyfélszolgálat</h2>
     <ion-content class="ion-padding">
       <div class="container">
         <h2 class="mb-4">Írja meg, mi a panasza</h2>
@@ -78,5 +78,10 @@ const sendSupport = async() =>{
 }
 ion-fab-button{
     margin-top: 1rem;
+}
+h2 {
+  font-weight: 700;
+  margin-top: 2rem;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
 }
 </style>
